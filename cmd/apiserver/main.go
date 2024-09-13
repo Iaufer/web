@@ -26,8 +26,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	s := apisrever.New(config)
-	if err := s.Start(); err != nil {
+	if err := apisrever.Start(config); err != nil {
 		log.Fatal(err)
 	}
 }
