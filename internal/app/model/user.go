@@ -7,10 +7,10 @@ import (
 )
 
 type User struct {
-	ID               int
-	Email            string
-	Password         string
-	EncyptedPassword string
+	ID               int    `json:"id"`
+	Email            string `json:"email"`
+	Password         string `json:"password,omitempty"`
+	EncyptedPassword string `json:"-"`
 }
 
 func (u *User) Validate() error {
@@ -32,6 +32,14 @@ func (u *User) BeforeCreate() error {
 	}
 
 	return nil
+}
+
+func (u *User) Sanitaze() {
+	u.Password = ""
+}
+
+func (u *User) CompatePassword(password string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(u.EncyptedPassword), []byte(password)) == nil
 }
 
 func encryptString(s string) (string, error) {

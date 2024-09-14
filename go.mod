@@ -1,6 +1,8 @@
 module web
 
-go 1.22.6
+go 1.23
+
+toolchain go1.23.1
 
 require (
 	github.com/BurntSushi/toml v1.4.0
@@ -15,6 +17,8 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible // indirect
 	github.com/golang-migrate/migrate v3.5.4+incompatible // indirect
+	github.com/gorilla/securecookie v1.1.2 // indirect
+	github.com/gorilla/sessions v1.4.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	golang.org/x/crypto v0.27.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
