@@ -21,7 +21,7 @@ func main() {
 	flag.Parse()
 
 	config := apisrever.NewConfig()
-	_, err := toml.DecodeFile(configPath, config)
+	_, err := toml.DecodeFile(configPath, config)//
 
 	if err != nil {
 		log.Fatal(err)
