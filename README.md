@@ -17,3 +17,6 @@ git remote set-url origin https://your_token@github.com/your_username/your_repo
     "email": "some",
     "password": "some"
 }
+
+
+go tidy

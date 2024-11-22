@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 	"web/internal/app/model"
@@ -58,8 +59,9 @@ func (s *server) configureRouter() {
 	s.router.Use(s.logRequest)
 	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"})))
 	//all person can access this router
-	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST")
+	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST", "GET")
 	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST")
+	s.router.HandleFunc("/logout", s.handleLogout()).Methods("POST")
 
 	// only for: /private/***
 	private := s.router.PathPrefix("/private").Subrouter()
@@ -135,25 +137,50 @@ func (s *server) handleUsersCreate() http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		req := &request{}
-		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
-			s.error(w, r, http.StatusBadRequest, err)
+
+		if r.Method == http.MethodGet { // также примиать post
+			// w.Header().Set("Content-Type", "text/html")
+			http.ServeFile(w, r, "internal/app/apisrever/templates/reg.html") // сделать так
+
 			return
 		}
 
-		u := &model.User{
-			Email:    req.Email,
-			Password: req.Password,
+		if r.Method == http.MethodPost {
+			if err := r.ParseForm(); err != nil {
+				s.error(w, r, http.StatusBadRequest, err)
+				return
+			}
+
+			email := r.FormValue("email")
+			password := r.FormValue("password")
+
+			if email == "" || password == "" {
+				s.error(w, r, http.StatusBadRequest, fmt.Errorf("email or password cannot be empty"))
+				return
+			}
+
+			// req := &request{}
+			// if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+			// 	s.error(w, r, http.StatusBadRequest, err)
+			// 	return
+			// }
+
+			fmt.Println(email)
+			fmt.Println(password)
+
+			u := &model.User{
+				Email:    email,
+				Password: password,
+			}
+
+			if err := s.store.User().Create(u); err != nil {
+				s.error(w, r, http.StatusUnprocessableEntity, err)
+				return
+			}
+
+			u.Sanitaze() // ответ без пароля юзера
+			s.respond(w, r, http.StatusCreated, u)
 		}
-
-		if err := s.store.User().Create(u); err != nil {
-			s.error(w, r, http.StatusUnprocessableEntity, err)
-			return
-		}
-
-		u.Sanitaze() // ответ без пароля юзера
-		s.respond(w, r, http.StatusCreated, u)
-
 	}
 }
 
@@ -200,5 +227,18 @@ func (s *server) respond(w http.ResponseWriter, r *http.Request, code int, data 
 	w.WriteHeader(code)
 	if data != nil {
 		json.NewEncoder(w).Encode(data)
+	}
+}
+
+func (s *server) handleLogout() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.SetCookie(w, &http.Cookie{
+			Name:     "unsosik",
+			Value:    "",
+			MaxAge:   -1,
+			HttpOnly: true,
+		})
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Successfully logged out"))
 	}
 }

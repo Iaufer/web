@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"web/internal/app/apisrever"
 
@@ -25,6 +26,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	fmt.Printf("Start...")
 
 	if err := apisrever.Start(config); err != nil {
 		log.Fatal(err)
