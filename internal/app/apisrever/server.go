@@ -62,7 +62,7 @@ func (s *server) configureRouter() {
 	//all person can access this router
 	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST", "GET")
 	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST", "GET")
-	s.router.HandleFunc("/logout", s.handleLogout()).Methods("POST")
+	s.router.HandleFunc("/logout", s.handleLogout()).Methods("POST", "GET")
 
 	// only for: /private/***
 	private := s.router.PathPrefix("/private").Subrouter()
@@ -179,8 +179,10 @@ func (s *server) handleUsersCreate() http.HandlerFunc {
 				return
 			}
 
-			u.Sanitaze()                           // ответ без пароля юзера
-			s.respond(w, r, http.StatusCreated, u) // тут сделать перенапрвление на вход
+			u.Sanitaze() // ответ без пароля юзера
+			// s.respond(w, r, http.StatusCreated, u) // тут сделать перенапрвление на вход
+
+			http.Redirect(w, r, "/sessions", http.StatusSeeOther)
 		}
 	}
 }
@@ -236,6 +238,8 @@ func (s *server) handleSessionsCreate() http.HandlerFunc {
 			}
 
 			s.respond(w, r, http.StatusOK, nil) // тут можно сделать перенаправление на профиль пользователя
+
+			// http.Redirect(w, r, "/profile")
 		}
 
 	}
