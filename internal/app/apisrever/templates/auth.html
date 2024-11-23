@@ -74,6 +74,17 @@
         header .right a.private-topic:hover {
             background-color: #0056b3; /* Более темный синий при наведении */
         }
+        header .right a.logout {
+            background-color: transparent; /* Прозрачный фон */
+            padding: 5px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        header .right a.logout:hover {
+            background-color: #f8f9fa; /* Легкий серый фон при наведении */
+        }
         main {
             padding: 20px;
             text-align: center;
@@ -130,19 +141,22 @@
     </style>
 </head>
 <body>
-    <header>
-        <div class="left">
-            <a href="./index.html">General</a>
-            <div class="user">
-                User
-                <a href="./own-topics.html">OWN topics</a>
-            </div>
+<header>
+    <div class="left">
+        <a href="./index.html">General</a>
+        <div class="user">
+            User
+            <a href="/own-topics.html">OWN topics</a>
         </div>
-        <div class="right">
-            <a href="./new-topic.html" class="new-topic">New public topic</a>
-            <a href="./new-private-topic.html" class="private-topic">New private topic</a>
-        </div>
-    </header>
+    </div>
+    <div class="right">
+        <a href="/new-topic.html" class="new-topic">New public topic</a>
+        <a href="/new-private-topic.html" class="private-topic">New private topic</a>
+        <a href="/logout" class="logout">⏻</a>
+ <!--            <img src="./out.png" alt="Logout" style="width: 20px; height: 20px; vertical-align: middle;">
+        </a> -->
+    </div>
+</header>
     <main>
         <h1>Share your ideas!</h1>
         <div class="search-box">
@@ -156,43 +170,5 @@
             <!-- Кнопки пагинации -->
         </div>
     </main>
-    <script>
-        // Тестовые данные
-        const topics = Array.from({length: 45}, (_, i) => `Публичная тема #${i + 1}`);
-        let currentPage = 1;
-        const itemsPerPage = 10;
-
-        function searchTopics() {
-            const query = document.getElementById('search').value.toLowerCase();
-            const filteredTopics = topics.filter(topic => topic.toLowerCase().includes(query));
-            displayTopics(filteredTopics, 1);
-        }
-
-        function displayTopics(data, page) {
-            const startIndex = (page - 1) * itemsPerPage;
-            const endIndex = startIndex + itemsPerPage;
-            const pageTopics = data.slice(startIndex, endIndex);
-
-            const topicsContainer = document.getElementById('topics');
-            topicsContainer.innerHTML = '';
-            pageTopics.forEach(topic => {
-                const div = document.createElement('div');
-                div.className = 'topic';
-                div.textContent = topic;
-                topicsContainer.appendChild(div);
-            });
-
-            const paginationContainer = document.getElementById('pagination');
-            paginationContainer.innerHTML = '';
-
-            const totalPages = Math.ceil(data.length / itemsPerPage);
-            for (let i = 1; i <= totalPages; i++) {
-                const button = document.createElement('button');
-                button.textContent = i;
-                button.onclick = () => displayTopics(data, i);
-                paginationContainer.appendChild(button);
-            }
-        }
-    </script>
 </body>
 </html>
