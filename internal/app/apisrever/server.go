@@ -62,12 +62,29 @@ func (s *server) configureRouter() {
 	//all person can access this router
 	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST", "GET")
 	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST", "GET")
-	s.router.HandleFunc("/logout", s.handleLogout()).Methods("POST", "GET")
 
 	// only for: /private/***
 	private := s.router.PathPrefix("/private").Subrouter()
 	private.Use(s.authenticateUser)
 	private.HandleFunc("/whoami", s.handleWhoami()).Methods("GET")
+	private.HandleFunc("/profile", s.handleProfile()).Methods("GET")
+
+}
+
+func (s *server) handleProfile() http.HandlerFunc {
+	fmt.Println("profile succes")
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, ok := r.Context().Value(ctxKeyUser).(*model.User)
+
+		if !ok || user == nil {
+			s.error(w, r, http.StatusUnauthorized, errNotAuthenticated)
+			return
+		}
+
+		// s.respond(w, r, http.StatusOK, user)
+		http.ServeFile(w, r, "internal/app/apisrever/templates/auth.html") // сделать так
+
+	}
 }
 
 func (s *server) logRequest(next http.Handler) http.Handler {
@@ -237,9 +254,9 @@ func (s *server) handleSessionsCreate() http.HandlerFunc {
 				return
 			}
 
-			s.respond(w, r, http.StatusOK, nil) // тут можно сделать перенаправление на профиль пользователя
+			// s.respond(w, r, http.StatusOK, nil) // тут можно сделать перенаправление на профиль пользователя
 
-			// http.Redirect(w, r, "/profile")
+			http.Redirect(w, r, "/private/profile", http.StatusSeeOther)
 		}
 
 	}
