@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+	"web/internal/app/apisrever/utils"
 	"web/internal/app/model"
 	"web/internal/app/store"
 
@@ -60,7 +61,7 @@ func (s *server) configureRouter() {
 	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"})))
 	//all person can access this router
 	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST", "GET")
-	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST")
+	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST", "GET")
 	s.router.HandleFunc("/logout", s.handleLogout()).Methods("POST")
 
 	// only for: /private/***
@@ -178,8 +179,8 @@ func (s *server) handleUsersCreate() http.HandlerFunc {
 				return
 			}
 
-			u.Sanitaze() // ответ без пароля юзера
-			s.respond(w, r, http.StatusCreated, u)
+			u.Sanitaze()                           // ответ без пароля юзера
+			s.respond(w, r, http.StatusCreated, u) // тут сделать перенапрвление на вход
 		}
 	}
 }
@@ -191,31 +192,52 @@ func (s *server) handleSessionsCreate() http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		req := &request{}
-		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
-			s.error(w, r, http.StatusBadRequest, err)
+
+		if r.Method == http.MethodGet {
+			http.ServeFile(w, r, "internal/app/apisrever/templates/login.html") // сделать так
+
 			return
+		} else if r.Method == http.MethodPost {
+
+			requiredFields := []string{"email", "password"}
+
+			formData, err := utils.ParseFormFields(r, requiredFields)
+
+			if err != nil {
+				s.error(w, r, http.StatusBadRequest, err)
+				return
+			}
+
+			email := formData["email"]
+			password := formData["password"]
+
+			// req := &request{}
+			// if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+			// 	s.error(w, r, http.StatusBadRequest, err)
+			// 	return
+			// }
+
+			u, err := s.store.User().FindByEmail(email)
+			if err != nil || !u.CompatePassword(password) {
+				s.error(w, r, http.StatusUnauthorized, errIncorrectEmailOrPassword)
+				return
+			}
+
+			session, err := s.sessionsStore.Get(r, sessionName)
+			if err != nil {
+				s.error(w, r, http.StatusInternalServerError, err)
+				return
+			}
+
+			session.Values["user_id"] = u.ID
+			if err := s.sessionsStore.Save(r, w, session); err != nil {
+				s.error(w, r, http.StatusInternalServerError, err)
+				return
+			}
+
+			s.respond(w, r, http.StatusOK, nil) // тут можно сделать перенаправление на профиль пользователя
 		}
 
-		u, err := s.store.User().FindByEmail(req.Email)
-		if err != nil || !u.CompatePassword(req.Password) {
-			s.error(w, r, http.StatusUnauthorized, errIncorrectEmailOrPassword)
-			return
-		}
-
-		session, err := s.sessionsStore.Get(r, sessionName)
-		if err != nil {
-			s.error(w, r, http.StatusInternalServerError, err)
-			return
-		}
-
-		session.Values["user_id"] = u.ID
-		if err := s.sessionsStore.Save(r, w, session); err != nil {
-			s.error(w, r, http.StatusInternalServerError, err)
-			return
-		}
-
-		s.respond(w, r, http.StatusOK, nil)
 	}
 }
 
