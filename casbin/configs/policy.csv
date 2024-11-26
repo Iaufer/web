@@ -1,5 +1,6 @@
-p, admin, *, *, *, *
-p, reader, *, read, *, *
+p, admin, *, *
+p, reader, topic, read
+
 
 
 g, alice, admin
