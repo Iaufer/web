@@ -16,12 +16,10 @@ func main() {
 	}
 
 	sub := "bob"
-	obj := "data"
+	obj := "topic"
 	act := "read"
-	data := "12" // получить реальную дату
-	pr := false
 
-	if res, err := e.Enforce(sub, obj, act, data, pr); err != nil {
+	if res, err := e.Enforce(sub, obj, act); err != nil {
 		log.Fatal(err)
 	} else if res {
 		fmt.Println("Succes")

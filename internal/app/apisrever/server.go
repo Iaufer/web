@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 	"web/internal/app/apisrever/utils"
@@ -83,8 +84,29 @@ func (s *server) handleProfile() http.HandlerFunc {
 			return
 		}
 
-		// s.respond(w, r, http.StatusOK, user)
-		http.ServeFile(w, r, "internal/app/apisrever/templates/auth.html") // сделать так
+		if r.Method == http.MethodGet {
+			fmt.Println("GET")
+			// s.respond(w, r, http.StatusOK, user)
+			http.ServeFile(w, r, "internal/app/apisrever/templates/auth.html") // сделать так
+		} else if r.Method == http.MethodPost {
+			fmt.Println("POST")
+
+			m, err := utils.ParseFormFields(r, []string{"topicname", "topicdescription", "ispublic"})
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			t := model.Topic{
+				TopicName:   m["topicname"],
+				Description: m["topicdescription"],
+				Visibility:  m["ispublic"],
+			}
+
+			fmt.Println(t)
+
+			s.respond(w, r, http.StatusOK, t)
+		}
 
 	}
 }
@@ -290,23 +312,19 @@ func (s *server) respond(w http.ResponseWriter, r *http.Request, code int, data 
 
 func (s *server) handleLogout() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Получаем текущую сессию
 		session, err := s.sessionsStore.Get(r, sessionName)
 		if err != nil {
 			s.error(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
-		// Удаляем данные из сессии
 		session.Values = make(map[interface{}]interface{})
 
-		// Сохраняем изменения в сессии
 		if err := s.sessionsStore.Save(r, w, session); err != nil {
 			s.error(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
-		// Удаляем куки
 		http.SetCookie(w, &http.Cookie{
 			Name:     sessionName,
 			Value:    "",
@@ -314,7 +332,6 @@ func (s *server) handleLogout() http.HandlerFunc {
 			HttpOnly: true,
 		})
 
-		// Перенаправляем на главную страницу или другой маршрут
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		http.Redirect(w, r, "/sessions", http.StatusSeeOther)
 	}
 }
