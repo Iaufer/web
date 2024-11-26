@@ -63,6 +63,8 @@ func (s *server) configureRouter() {
 	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST", "GET")
 	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST", "GET")
 
+	s.router.HandleFunc("/logout", s.handleLogout()).Methods("POST", "GET")
+
 	// only for: /private/***
 	private := s.router.PathPrefix("/private").Subrouter()
 	private.Use(s.authenticateUser)
