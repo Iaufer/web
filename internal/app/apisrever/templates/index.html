@@ -50,13 +50,6 @@
             margin-left: 10px;
             transition: 0.3s;
         }
-        header .right a.new-topic {
-            background-color: #ffc107; /* Желтый фон */
-            color: #fff; /* Белый текст */
-        }
-        header .right a.new-topic:hover {
-            background-color: #e0a800; /* Более темный желтый при наведении */
-        }
         header .right a.login {
             background-color: #28a745;
         }
@@ -125,7 +118,6 @@
             <div class="guest">Guest</div>
         </div>
         <div class="right">
-            <a href="./new-topic" class="new-topic">New public topic</a>
             <a href="/login" class="login">Login | Reg</a>
         </div>
     </header>
@@ -142,43 +134,5 @@
             <!-- Кнопки пагинации -->
         </div>
     </main>
-    <script>
-        // Тестовые данные
-        const topics = Array.from({length: 45}, (_, i) => `Публичная тема #${i + 1}`);
-        let currentPage = 1;
-        const itemsPerPage = 10;
-
-        function searchTopics() {
-            const query = document.getElementById('search').value.toLowerCase();
-            const filteredTopics = topics.filter(topic => topic.toLowerCase().includes(query));
-            displayTopics(filteredTopics, 1);
-        }
-
-        function displayTopics(data, page) {
-            const startIndex = (page - 1) * itemsPerPage;
-            const endIndex = startIndex + itemsPerPage;
-            const pageTopics = data.slice(startIndex, endIndex);
-
-            const topicsContainer = document.getElementById('topics');
-            topicsContainer.innerHTML = '';
-            pageTopics.forEach(topic => {
-                const div = document.createElement('div');
-                div.className = 'topic';
-                div.textContent = topic;
-                topicsContainer.appendChild(div);
-            });
-
-            const paginationContainer = document.getElementById('pagination');
-            paginationContainer.innerHTML = '';
-
-            const totalPages = Math.ceil(data.length / itemsPerPage);
-            for (let i = 1; i <= totalPages; i++) {
-                const button = document.createElement('button');
-                button.textContent = i;
-                button.onclick = () => displayTopics(data, i);
-                paginationContainer.appendChild(button);
-            }
-        }
-    </script>
 </body>
 </html>
