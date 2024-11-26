@@ -275,15 +275,46 @@ func (s *server) respond(w http.ResponseWriter, r *http.Request, code int, data 
 	}
 }
 
+// func (s *server) handleLogout() http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		http.SetCookie(w, &http.Cookie{
+// 			Name:     "unsosik",
+// 			Value:    "",
+// 			MaxAge:   -1,
+// 			HttpOnly: true,
+// 		})
+// 		w.WriteHeader(http.StatusOK)
+// 		w.Write([]byte("Successfully logged out"))
+// 	}
+// }
+
 func (s *server) handleLogout() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Получаем текущую сессию
+		session, err := s.sessionsStore.Get(r, sessionName)
+		if err != nil {
+			s.error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		// Удаляем данные из сессии
+		session.Values = make(map[interface{}]interface{})
+
+		// Сохраняем изменения в сессии
+		if err := s.sessionsStore.Save(r, w, session); err != nil {
+			s.error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		// Удаляем куки
 		http.SetCookie(w, &http.Cookie{
-			Name:     "unsosik",
+			Name:     sessionName,
 			Value:    "",
 			MaxAge:   -1,
 			HttpOnly: true,
 		})
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Successfully logged out"))
+
+		// Перенаправляем на главную страницу или другой маршрут
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }
