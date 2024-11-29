@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"text/template"
 	"time"
@@ -78,6 +77,7 @@ func (s *server) configureRouter() {
 	private.Use(s.authenticateUser)
 	private.HandleFunc("/whoami", s.handleWhoami()).Methods("GET")
 	private.HandleFunc("/profile", s.handleProfile()).Methods("GET", "POST")
+  
 	private.HandleFunc("/roles", s.getRoles).Methods("GET")
 	private.HandleFunc("/alltopics", s.handleFindAll()).Methods("GET")
 }
@@ -132,7 +132,6 @@ func (s *server) getRoles(w http.ResponseWriter, r *http.Request) {
 	// s.respond(w, r, http.StatusOK, data) // здесь как то сделать так чтобы были все роли и юзеры их
 
 	s.respond(w, r, http.StatusOK, roles)
-
 }
 
 func (s *server) handleProfile() http.HandlerFunc {
@@ -148,19 +147,6 @@ func (s *server) handleProfile() http.HandlerFunc {
 			s.renderProfilePage(w, r, user)
 		case http.MethodPost:
 			// Если разрешение есть, создаем топик
-
-			allowed, err := s.enforcer.Enforce(user.Email, "topic", "create")
-
-			if err != nil {
-				s.error(w, r, http.StatusInternalServerError, err)
-				return
-			}
-
-			if !allowed {
-				s.error(w, r, http.StatusForbidden, errors.New("permission denied"))
-				return
-			}
-
 			s.createTopic(w, r, user)
 		default:
 			s.error(w, r, http.StatusMethodNotAllowed, errors.New("method not allowed"))
@@ -181,7 +167,7 @@ func (s *server) renderProfilePage(w http.ResponseWriter, r *http.Request, user 
 }
 
 func (s *server) createTopic(w http.ResponseWriter, r *http.Request, user *model.User) {
-	m, err := utils.ParseFormFields(r, []string{"topicname", "topicdescription", "isprivate", "topicabout", "topiccategory"})
+	m, err := utils.ParseFormFields(r, []string{"topicname", "topicdescription", "topicabout"})
 	if err != nil {
 		s.error(w, r, http.StatusBadRequest, err)
 		return
@@ -192,12 +178,17 @@ func (s *server) createTopic(w http.ResponseWriter, r *http.Request, user *model
 		return
 	}
 
+	isPrivate := false
+	if m["isprivate"] == "on" {
+		isPrivate = true
+	}
+
 	topic := &model.Topic{
 		UserID:      user.ID,
 		TopicName:   m["topicname"],
-		Description: m["topiccategory"], //в описании будут категории лень менять везде
-		Visibility:  m["isprivate"] == "on",
-		Content:     m["topicabout"], // здесь основной контент топика
+		Description: m["topicdescription"],
+		Visibility:  isPrivate,
+		Content:     m["topicabout"],
 	}
 
 	fmt.Println(*topic)
@@ -336,7 +327,13 @@ func (s *server) handleUsersCreate() http.HandlerFunc {
 func addRoleForUser(name, role string, e *casbin.Enforcer) error {
 	_, err := e.AddRoleForUser(name, role)
 
-	return err
+	if err != nil {
+		fmt.Println("Error in addRoleForUser")
+
+		return err
+	}
+
+	return nil
 }
 
 func (s *server) handleSessionsCreate() http.HandlerFunc {
