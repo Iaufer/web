@@ -116,8 +116,8 @@
             cursor: pointer;
         }
 
-        .modal input, .modal textarea {
-            width: 100%;
+        .modal input {
+            width: 90%;
             padding: 10px;
             margin: 10px 0;
             border-radius: 5px;
@@ -136,6 +136,47 @@
         .modal button:hover {
             background-color: #0056b3;
         }
+
+        .modal textarea {
+            width: 90%; 
+            height: auto; 
+            min-height: 4em; 
+            max-width: 90%; 
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            resize: vertical;
+            }
+
+        .category-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .category-btn {
+            padding: 10px 15px;
+            border: 1px solid #007bff;
+            background-color: #fff;
+            color: #007bff;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-size: 14px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .category-btn.selected {
+            background-color: #0056b3;
+            color: #fff;
+        }
+
+        .category-btn:hover {
+            background-color: #f1f1f1;
+        }
+
         main {
             padding: 20px;
             text-align: center;
@@ -230,12 +271,34 @@
                 <label for="topicname">Name:</label>
                 <input type="text" id="topicname" name="topicname" required>
 
+                <label for="topiccategory">Category:</label>
+                <div id="categoryButtons" class="category-buttons">
+                    <button type="button" class="category-btn" data-category="science">Science</button>
+                    <button type="button" class="category-btn" data-category="sport">Sport</button>
+                    <button type="button" class="category-btn" data-category="fun">Fun</button>
+                    <button type="button" class="category-btn" data-category="food">Food</button>
+                    <button type="button" class="category-btn" data-category="movie">Movie</button>
+                    <button type="button" class="category-btn" data-category="book">Book</button>
+                    <button type="button" class="category-btn" data-category="children">Children</button>
+                    <button type="button" class="category-btn" data-category="politics">Politics</button>
+                    <button type="button" class="category-btn" data-category="trips">Trips</button>
+                    <button type="button" class="category-btn" data-category="culture">Culture</button>
+                    <button type="button" class="category-btn" data-category="18+">18+</button>
+                    <button type="button" class="category-btn" data-category="other">
+                    Other</button>
+                </div>
+                <input type="hidden" id="selectedCategories" name="topiccategory" value="">
+                <p>Choose from 1 to 3 categories</p>
+
+                <label for="topicabout">About:</label>
+                <input type="text" id="topicabout" name="topicabout" required>
+
                 <label for="topicdescription">Description:</label>
                 <textarea id="topicdescription" name="topicdescription" required></textarea>
 
-                <label for="ispublic">
-                    <input type="checkbox" id="ispublic" name="ispublic">
-                    public
+                <label for="isprivate">
+                    <input type="checkbox" id="ispublic" name="isprivate">
+                    private
                 </label>
 
                 <div style="margin-top: 15px;">
@@ -280,6 +343,46 @@
             newTopicModal.style.display = "none";
         }
     }
+    </script>
+    <script>
+    // Массив для хранения выбранных категорий
+    let selectedCategories = [];
+
+    // Получаем все кнопки категорий
+    const categoryButtons = document.querySelectorAll('.category-btn');
+
+    // Функция для обновления скрытого поля с выбранными категориями
+    function updateSelectedCategories() {
+        // Обновляем значение скрытого поля с выбранными категориями
+        document.getElementById('selectedCategories').value = selectedCategories.join(',');
+    }
+
+    // Обработчик кликов по кнопкам категорий
+    categoryButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const category = this.getAttribute('data-category');
+            
+            // Если количество выбранных категорий больше или равно 3
+            if (selectedCategories.length >= 3 && !selectedCategories.includes(category)) {
+                alert("Вы можете выбрать только 3 категории.");
+                return; // Не добавляем категорию, если выбрано уже 3
+            }
+            
+            // Если категория уже выбрана, отменяем выбор
+            if (selectedCategories.includes(category)) {
+                selectedCategories = selectedCategories.filter(item => item !== category);
+                this.classList.remove('selected'); // Убираем класс "selected"
+            } 
+            // Если категория не выбрана, добавляем в список
+            else {
+                selectedCategories.push(category);
+                this.classList.add('selected'); // Добавляем класс "selected"
+            }
+
+            // Обновляем скрытое поле с выбранными категориями
+            updateSelectedCategories();
+        });
+    });
     </script>
 </body>
 </html>
