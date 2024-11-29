@@ -3,6 +3,7 @@ package apisrever
 import (
 	"database/sql"
 	"net/http"
+	"web/casbin"
 	"web/internal/app/store/sqlstore"
 
 	"github.com/gorilla/sessions"
@@ -19,7 +20,8 @@ func Start(config *Config) error {
 
 	store := sqlstore.New(db)
 	sessionStore := sessions.NewCookieStore([]byte(config.SessionKey))
-	srv := newServer(store, sessionStore)
+	enforcer, _ := casbin.NewCasbin()
+	srv := newServer(store, sessionStore, enforcer)
 
 	return http.ListenAndServe(config.BindAddr, srv)
 }

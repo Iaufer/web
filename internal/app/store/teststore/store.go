@@ -7,6 +7,7 @@ import (
 
 type Store struct {
 	userRepository *UserRepository
+	// topicRepository *TopicRepository
 }
 
 func New() *Store {

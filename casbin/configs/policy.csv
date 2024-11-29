@@ -1,7 +1,5 @@
 p, admin, *, *
+p, editor, topic, create
 p, reader, topic, read
 
 
-
-g, alice, admin
-g, bob, reader

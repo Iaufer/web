@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
+	"text/template"
 	"time"
 	"web/internal/app/apisrever/utils"
 	"web/internal/app/model"
 	"web/internal/app/store"
 
+	"github.com/casbin/casbin/v2"
 	"github.com/google/uuid"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -37,14 +38,16 @@ type server struct {
 	logger        *logrus.Logger
 	store         store.Store
 	sessionsStore sessions.Store
+	enforcer      *casbin.Enforcer
 }
 
-func newServer(store store.Store, sessionsStore sessions.Store) *server {
+func newServer(store store.Store, sessionsStore sessions.Store, enforcer *casbin.Enforcer) *server {
 	s := &server{
 		router:        mux.NewRouter(),
 		logger:        logrus.New(),
 		store:         store,
 		sessionsStore: sessionsStore,
+		enforcer:      enforcer,
 	}
 
 	s.configureRouter()
@@ -70,45 +73,67 @@ func (s *server) configureRouter() {
 	private := s.router.PathPrefix("/private").Subrouter()
 	private.Use(s.authenticateUser)
 	private.HandleFunc("/whoami", s.handleWhoami()).Methods("GET")
-	private.HandleFunc("/profile", s.handleProfile()).Methods("GET")
+	private.HandleFunc("/profile", s.handleProfile()).Methods("GET", "POST")
 
 }
 
 func (s *server) handleProfile() http.HandlerFunc {
-	fmt.Println("profile succes")
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, ok := r.Context().Value(ctxKeyUser).(*model.User)
-
 		if !ok || user == nil {
 			s.error(w, r, http.StatusUnauthorized, errNotAuthenticated)
 			return
 		}
 
-		if r.Method == http.MethodGet {
-			fmt.Println("GET")
-			// s.respond(w, r, http.StatusOK, user)
-			http.ServeFile(w, r, "internal/app/apisrever/templates/auth.html") // сделать так
-		} else if r.Method == http.MethodPost {
-			fmt.Println("POST")
-
-			m, err := utils.ParseFormFields(r, []string{"topicname", "topicdescription", "ispublic"})
-
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			t := model.Topic{
-				TopicName:   m["topicname"],
-				Description: m["topicdescription"],
-				Visibility:  m["ispublic"],
-			}
-
-			fmt.Println(t)
-
-			s.respond(w, r, http.StatusOK, t)
+		switch r.Method {
+		case http.MethodGet:
+			s.renderProfilePage(w, r, user)
+		case http.MethodPost:
+			// Если разрешение есть, создаем топик
+			s.createTopic(w, r, user)
+		default:
+			s.error(w, r, http.StatusMethodNotAllowed, errors.New("method not allowed"))
 		}
-
 	}
+}
+
+func (s *server) renderProfilePage(w http.ResponseWriter, r *http.Request, user *model.User) {
+	tmpl, err := template.ParseFiles("internal/app/apisrever/templates/auth.html")
+	if err != nil {
+		s.error(w, r, http.StatusInternalServerError, err)
+		return
+	}
+
+	if err := tmpl.Execute(w, user); err != nil {
+		s.error(w, r, http.StatusInternalServerError, err)
+	}
+}
+
+func (s *server) createTopic(w http.ResponseWriter, r *http.Request, user *model.User) {
+	m, err := utils.ParseFormFields(r, []string{"topicname", "topicdescription", "ispublic"})
+	if err != nil {
+		s.error(w, r, http.StatusBadRequest, err)
+		return
+	}
+
+	if m["topicname"] == "" || m["topicdescription"] == "" {
+		s.error(w, r, http.StatusBadRequest, errors.New("topic name and description cannot be empty"))
+		return
+	}
+
+	topic := &model.Topic{
+		UserID:      user.ID,
+		TopicName:   m["topicname"],
+		Description: m["topicdescription"],
+		Visibility:  m["ispublic"] == "on",
+	}
+
+	if err := s.store.Topic().Create(topic); err != nil {
+		s.error(w, r, http.StatusInternalServerError, err)
+		return
+	}
+
+	http.Redirect(w, r, "/private/profile", http.StatusSeeOther)
 }
 
 func (s *server) logRequest(next http.Handler) http.Handler {
@@ -217,15 +242,35 @@ func (s *server) handleUsersCreate() http.HandlerFunc {
 
 			if err := s.store.User().Create(u); err != nil {
 				s.error(w, r, http.StatusUnprocessableEntity, err)
+				fmt.Println("Здесь ПРОБЕЛМА")
 				return
 			}
 
 			u.Sanitaze() // ответ без пароля юзера
 			// s.respond(w, r, http.StatusCreated, u) // тут сделать перенапрвление на вход
 
+			// err := addRoleForUser(u.Email, s.enforcer)
+
+			// if err != nil {
+			// 	log.Fatal(err)
+			// 	return
+			// }
+
 			http.Redirect(w, r, "/sessions", http.StatusSeeOther)
 		}
 	}
+}
+
+func addRoleForUser(name string, e *casbin.Enforcer) error {
+	_, err := e.AddRoleForUser(name, "editor")
+
+	if err != nil {
+		fmt.Println("Error in addRoleForUser")
+
+		return err
+	}
+
+	return nil
 }
 
 func (s *server) handleSessionsCreate() http.HandlerFunc {
@@ -279,6 +324,13 @@ func (s *server) handleSessionsCreate() http.HandlerFunc {
 			}
 
 			// s.respond(w, r, http.StatusOK, nil) // тут можно сделать перенаправление на профиль пользователя
+
+			// err = addRoleForUser("name", s.enforcer)
+
+			// if err != nil {
+			// 	log.Fatal(err)
+			// 	return
+			// }
 
 			http.Redirect(w, r, "/private/profile", http.StatusSeeOther)
 		}
