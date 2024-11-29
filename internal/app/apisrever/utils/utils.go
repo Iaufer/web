@@ -16,6 +16,15 @@ func ParseFormFields(r *http.Request, requiredFields []string) (map[string]strin
 	formData := make(map[string]string)
 
 	for _, field := range requiredFields {
+		if field == "isprivate" {
+			value := r.FormValue(field)
+			if value == "" {
+				formData[field] = ""
+			} else {
+				formData[field] = value
+			}
+			continue
+		}
 		value := r.FormValue(field)
 
 		if value == "" {

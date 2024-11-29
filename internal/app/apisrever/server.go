@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"text/template"
 	"time"
@@ -77,7 +78,7 @@ func (s *server) configureRouter() {
 	private.Use(s.authenticateUser)
 	private.HandleFunc("/whoami", s.handleWhoami()).Methods("GET")
 	private.HandleFunc("/profile", s.handleProfile()).Methods("GET", "POST")
-  
+
 	private.HandleFunc("/roles", s.getRoles).Methods("GET")
 	private.HandleFunc("/alltopics", s.handleFindAll()).Methods("GET")
 }
@@ -167,7 +168,7 @@ func (s *server) renderProfilePage(w http.ResponseWriter, r *http.Request, user 
 }
 
 func (s *server) createTopic(w http.ResponseWriter, r *http.Request, user *model.User) {
-	m, err := utils.ParseFormFields(r, []string{"topicname", "topicdescription", "topicabout"})
+	m, err := utils.ParseFormFields(r, []string{"topicname", "topicdescription", "isprivate", "topicabout", "topiccategory"})
 	if err != nil {
 		s.error(w, r, http.StatusBadRequest, err)
 		return
@@ -186,7 +187,7 @@ func (s *server) createTopic(w http.ResponseWriter, r *http.Request, user *model
 	topic := &model.Topic{
 		UserID:      user.ID,
 		TopicName:   m["topicname"],
-		Description: m["topicdescription"],
+		Description: m["topiccategory"],
 		Visibility:  isPrivate,
 		Content:     m["topicabout"],
 	}
