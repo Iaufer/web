@@ -11,6 +11,7 @@ import (
 	"time"
 	"web/internal/app/apisrever/utils"
 	"web/internal/app/model"
+	"web/internal/app/roles"
 	"web/internal/app/store"
 
 	"github.com/casbin/casbin/v2"
@@ -68,6 +69,8 @@ func (s *server) configureRouter() {
 	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST", "GET")
 	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST", "GET")
 
+	s.router.HandleFunc("/profile", s.handleUnAuthProfile()).Methods("GET")
+
 	s.router.HandleFunc("/logout", s.handleLogout()).Methods("POST", "GET")
 
 	// only for: /private/***
@@ -76,7 +79,33 @@ func (s *server) configureRouter() {
 	private.HandleFunc("/whoami", s.handleWhoami()).Methods("GET")
 	private.HandleFunc("/profile", s.handleProfile()).Methods("GET", "POST")
 	private.HandleFunc("/roles", s.getRoles).Methods("GET")
+	private.HandleFunc("/alltopics", s.handleFindAll()).Methods("GET")
+}
 
+func (s *server) handleUnAuthProfile() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		s.respond(w, r, http.StatusOK, 123)
+	}
+}
+
+func (s *server) handleFindAll() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, ok := r.Context().Value(ctxKeyUser).(*model.User)
+
+		if !ok || user == nil {
+			s.error(w, r, http.StatusUnauthorized, errNotAuthenticated)
+			return
+		}
+
+		topics, err := s.store.Topic().FindAll()
+
+		if err != nil {
+			s.error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		s.respond(w, r, http.StatusOK, topics)
+	}
 }
 
 func (s *server) getRoles(w http.ResponseWriter, r *http.Request) {
@@ -294,7 +323,7 @@ func (s *server) handleUsersCreate() http.HandlerFunc {
 			u.Sanitaze() // ответ без пароля юзера
 			// s.respond(w, r, http.StatusCreated, u) // тут сделать перенапрвление на вход
 
-			if err := addRoleForUser(u.Email, s.enforcer); err != nil {
+			if err := addRoleForUser(u.Email, roles.Editor, s.enforcer); err != nil {
 				s.error(w, r, http.StatusInternalServerError, err)
 				return
 			}
@@ -304,8 +333,8 @@ func (s *server) handleUsersCreate() http.HandlerFunc {
 	}
 }
 
-func addRoleForUser(name string, e *casbin.Enforcer) error {
-	_, err := e.AddRoleForUser(name, "editor")
+func addRoleForUser(name, role string, e *casbin.Enforcer) error {
+	_, err := e.AddRoleForUser(name, role)
 
 	return err
 }
