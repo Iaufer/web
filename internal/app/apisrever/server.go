@@ -110,7 +110,7 @@ func (s *server) renderProfilePage(w http.ResponseWriter, r *http.Request, user 
 }
 
 func (s *server) createTopic(w http.ResponseWriter, r *http.Request, user *model.User) {
-	m, err := utils.ParseFormFields(r, []string{"topicname", "topicdescription", "ispublic"})
+	m, err := utils.ParseFormFields(r, []string{"topicname", "topicdescription", "isprivate", "topicabout"})
 	if err != nil {
 		s.error(w, r, http.StatusBadRequest, err)
 		return
@@ -125,8 +125,11 @@ func (s *server) createTopic(w http.ResponseWriter, r *http.Request, user *model
 		UserID:      user.ID,
 		TopicName:   m["topicname"],
 		Description: m["topicdescription"],
-		Visibility:  m["ispublic"] == "on",
+		Visibility:  m["isprivate"] == "on",
+		Content:     m["topicabout"],
 	}
+
+	fmt.Println(*topic)
 
 	if err := s.store.Topic().Create(topic); err != nil {
 		s.error(w, r, http.StatusInternalServerError, err)
