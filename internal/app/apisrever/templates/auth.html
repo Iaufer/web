@@ -51,6 +51,7 @@
         header .right {
             display: flex;
             align-items: center;
+            gap: 1px;
         }
         header .right a {
             text-decoration: none;
@@ -79,6 +80,21 @@
         header .right a.logout:hover {
             background-color: #f8f9fa; /* Легкий серый фон при наведении */
         }
+
+        header .right a.view-topics {
+            background-color: #dc3545; /* Красный фон */
+            color: #fff; /* Белый текст */
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            margin-right: 10px; /* Отступ справа */
+            transition: 0.3s;
+        }
+
+        header .right a.view-topics:hover {
+            background-color: #c82333; /* Более тёмный красный при наведении */
+        }
+
         .modal {
             display: none; /* Скрыто по умолчанию */
             position: fixed;
@@ -242,15 +258,16 @@
         </div>
     </div>
     <div class="right">
-        <a href="#" class="new-topic" id="newTopicBtn">New topic</a>
+        <a href="#" class="view-topics" id="viewTopicsBtn">View All Topics</a>
+        <a href="#" class="new-topic" id="newTopicBtn">New Topic</a>
         <a href="/logout" class="logout">⏻</a>
     </div>
 </header>
     <main>
         <h1>Share your ideas!</h1>
         <div class="search-box">
-            <input type="text" id="search" placeholder="Искать темы...">
-            <button onclick="searchTopics()">Поиск</button>
+            <input type="text" id="search" placeholder="Example topic...">
+            <button onclick="searchTopics()">Seacrh</button>
         </div>
         <div class="topics" id="topics">
             <!-- Результаты поиска появятся здесь -->
@@ -296,6 +313,7 @@
                 <label for="topicdescription">Description:</label>
                 <textarea id="topicdescription" name="topicdescription" required></textarea>
 
+                
                 <label for="isprivate">
                     <input type="checkbox" id="ispublic" name="isprivate">
                     private
@@ -345,44 +363,98 @@
     }
     </script>
     <script>
-    // Массив для хранения выбранных категорий
+    
     let selectedCategories = [];
 
-    // Получаем все кнопки категорий
+  
     const categoryButtons = document.querySelectorAll('.category-btn');
 
-    // Функция для обновления скрытого поля с выбранными категориями
+    
     function updateSelectedCategories() {
-        // Обновляем значение скрытого поля с выбранными категориями
+        
         document.getElementById('selectedCategories').value = selectedCategories.join(',');
     }
 
-    // Обработчик кликов по кнопкам категорий
+    
     categoryButtons.forEach(button => {
         button.addEventListener('click', function() {
             const category = this.getAttribute('data-category');
             
-            // Если количество выбранных категорий больше или равно 3
+            
             if (selectedCategories.length >= 3 && !selectedCategories.includes(category)) {
                 alert("Вы можете выбрать только 3 категории.");
-                return; // Не добавляем категорию, если выбрано уже 3
+                return; 
             }
             
-            // Если категория уже выбрана, отменяем выбор
+            
             if (selectedCategories.includes(category)) {
                 selectedCategories = selectedCategories.filter(item => item !== category);
-                this.classList.remove('selected'); // Убираем класс "selected"
+                this.classList.remove('selected'); 
             } 
-            // Если категория не выбрана, добавляем в список
+            
             else {
                 selectedCategories.push(category);
-                this.classList.add('selected'); // Добавляем класс "selected"
+                this.classList.add('selected'); 
             }
 
-            // Обновляем скрытое поле с выбранными категориями
+            
             updateSelectedCategories();
         });
     });
+    </script>
+
+    <script>
+        document.getElementById("viewTopicsBtn").addEventListener("click", async () => {
+    try {
+
+        const response = await fetch('/private/alltopics');
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        
+        const topics = await response.json();
+
+        console.log(topics); 
+
+        if (!Array.isArray(topics)) {
+            throw new Error('Invalid response format');
+        }
+
+        
+        const topicsContainer = document.getElementById("topics");
+        topicsContainer.innerHTML = "";
+
+        
+        if (topics.length === 0) {
+            topicsContainer.innerHTML = "<p>No topics available.</p>";
+            return;
+        }
+
+        
+        topics.forEach(topic => {
+            const topicElement = document.createElement("div");
+            topicElement.classList.add("topic");
+
+            
+            const topicName = topic.TopicName || "No Topic Name";
+            const description = topic.description || "No Description";
+            const content = topic.content || "No Content";
+
+           
+            
+            topicElement.innerHTML = `
+                <p><strong>${topicName}</strong> ${description}</p>
+                `;
+            topicsContainer.appendChild(topicElement);
+        });
+
+    } catch (error) {
+        console.error("Error loading topics:", error);
+        alert(`Failed to load topics: ${error.message}`);
+    }
+});
+
     </script>
 </body>
 </html>
