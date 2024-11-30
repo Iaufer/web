@@ -66,6 +66,9 @@ func (s *server) configureRouter() {
 	s.router.Use(s.logRequest)
 	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"})))
 	//all person can access this router
+
+	s.router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("internal/app/apisrever/static/"))))
+
 	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST", "GET")
 	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST", "GET")
 
