@@ -1,0 +1,17 @@
+<!-- internal/app/apisrever/templates/topic.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .TopicName }}</title>
+</head>
+<body>
+    <h1>{{ .TopicName }}</h1>
+    <p><strong>Description:</strong> {{ .Description }}</p>
+    <p><strong>Content:</strong> {{ .Content }}</p>
+    <p><strong>Visibility:</strong> {{ if .Visibility }}Visible{{ else }}Hidden{{ end }}</p>
+    <p><strong>Created At:</strong> {{ .CreatedAt }}</p>
+    <p><strong>Updated At:</strong> {{ .UpdatedAt }}</p>
+</body>
+</html>

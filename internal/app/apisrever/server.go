@@ -125,7 +125,23 @@ func (s *server) getTopicById(w http.ResponseWriter, r *http.Request, topicID in
 		s.error(w, r, http.StatusInternalServerError, err)
 		return
 	}
-	s.respond(w, r, http.StatusOK, topic)
+
+	tmpl, err := template.ParseFiles("internal/app/apisrever/templates/topic.html")
+
+	if err != nil {
+		s.error(w, r, http.StatusInternalServerError, err)
+		return
+	}
+
+	if err = tmpl.Execute(w, topic); err != nil {
+		s.error(w, r, http.StatusInternalServerError, err)
+		return
+	}
+
+	// http.ServeFile(w, r, "internal/app/apisrever/templates/reg.html") // сделать так
+
+	// s.respond(w, r, http.StatusOK, topic)
+
 }
 
 func (s *server) handleUnAuthProfile() http.HandlerFunc {
