@@ -22,7 +22,7 @@ func (r *TopicRepository) FindByID(id int) (*model.Topic, error) {
 	return nil, nil
 }
 
-func (r *TopicRepository) FindAll() ([]*model.Topic, error) { // аргменту заглушка чтобы удовлетворить интефейсу
+func (r *TopicRepository) FindAll() ([]*model.Topic, error) {
 
 	query := `SELECT id, user_id, name, description, content, is_public, created_at, updated_at
 		FROM topics`
