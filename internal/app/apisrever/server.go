@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"text/template"
 	"time"
 	"web/internal/app/apisrever/utils"
@@ -76,6 +77,10 @@ func (s *server) configureRouter() {
 
 	s.router.HandleFunc("/logout", s.handleLogout()).Methods("POST", "GET")
 
+	s.router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "internal/app/apisrever/templates/index.html") // сделать так
+	}).Methods("GET")
+
 	// only for: /private/***
 	private := s.router.PathPrefix("/private").Subrouter()
 	private.Use(s.authenticateUser)
@@ -84,6 +89,43 @@ func (s *server) configureRouter() {
 
 	private.HandleFunc("/roles", s.getRoles).Methods("GET")
 	private.HandleFunc("/alltopics", s.handleFindAll()).Methods("GET")
+	private.HandleFunc("/topic/{id:[0-9]+}", s.handleTopic()).Methods("GET", "POST")
+}
+
+func (s *server) handleTopic() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		topicID, err := strconv.Atoi(vars["id"])
+
+		if err != nil {
+			s.error(w, r, http.StatusBadRequest, errors.New("invalid topic ID"))
+			return
+		}
+
+		switch r.Method {
+		case http.MethodGet:
+			s.getTopicById(w, r, topicID)
+		case http.MethodPost:
+			// updateTopic
+		default:
+			s.error(w, r, http.StatusMethodNotAllowed, errors.New("method not allowed"))
+		}
+
+	}
+}
+
+func (s *server) getTopicById(w http.ResponseWriter, r *http.Request, topicID int) {
+	topic, err := s.store.Topic().FindByID(topicID)
+
+	if err != nil {
+		if errors.Is(err, store.ErrRecordNotFound) {
+			s.error(w, r, http.StatusNotFound, errors.New("topic not found"))
+			return
+		}
+		s.error(w, r, http.StatusInternalServerError, err)
+		return
+	}
+	s.respond(w, r, http.StatusOK, topic)
 }
 
 func (s *server) handleUnAuthProfile() http.HandlerFunc {

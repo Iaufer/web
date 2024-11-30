@@ -11,6 +11,7 @@ type User struct {
 	Email            string `json:"email"`
 	Password         string `json:"password,omitempty"`
 	EncyptedPassword string `json:"-"`
+	Age              string `json:"age"`
 }
 
 func (u *User) Validate() error {
