@@ -106,12 +106,55 @@ func (s *server) handleTopic() http.HandlerFunc {
 		case http.MethodGet:
 			s.getTopicById(w, r, topicID)
 		case http.MethodPost:
+
+			s.updateTopicById(w, r, topicID)
 			// updateTopic
 		default:
 			s.error(w, r, http.StatusMethodNotAllowed, errors.New("method not allowed"))
 		}
 
 	}
+}
+
+func (s *server) updateTopicById(w http.ResponseWriter, r *http.Request, topicID int) {
+	topic, err := s.store.Topic().FindByID(topicID)
+	// user := r.Context().Value(ctxKeyUser).(*model.User)
+
+	// ok, err := s.enforcer.Enforce(user.Email, "topic", "update", user.ID)
+
+	// if err != nil {
+	// 	fmt.Println("ТУТ")
+	// 	s.error(w, r, http.StatusInternalServerError, err)
+	// 	return
+	// }
+
+	// if !ok {
+	// 	// Если пользователь не имеет прав на обновление, возвращаем ошибку
+	// 	s.error(w, r, http.StatusForbidden, errors.New("access denied"))
+	// 	return
+	// }
+
+	if err != nil {
+		if errors.Is(err, store.ErrRecordNotFound) {
+			s.error(w, r, http.StatusNotFound, errors.New("topic not found"))
+			return
+		}
+		s.error(w, r, http.StatusInternalServerError, err)
+		return
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&topic); err != nil { // через форму сделать
+		s.error(w, r, http.StatusBadRequest, errors.New("invalid request payload"))
+		return
+	}
+
+	if err := s.store.Topic().UpdateTopic(topic); err != nil {
+		s.error(w, r, http.StatusInternalServerError, err)
+		return
+	}
+
+	s.respond(w, r, http.StatusOK, topic)
+
 }
 
 func (s *server) getTopicById(w http.ResponseWriter, r *http.Request, topicID int) {
@@ -209,6 +252,21 @@ func (s *server) handleProfile() http.HandlerFunc {
 			s.renderProfilePage(w, r, user)
 		case http.MethodPost:
 			// Если разрешение есть, создаем топик
+			// if s.enforcer == nil {
+			// 	fmt.Println("s.enforcer nil")
+			// }
+			// allowed, err := s.enforcer.Enforce(user.Email, "topic", "create")
+			// if err != nil {
+			// 	fmt.Println("ERR ERR")
+			// 	s.error(w, r, http.StatusInternalServerError, err)
+			// 	return
+			// }
+			// if !allowed {
+			// 	fmt.Println("ALLOWED ALLOWED ALLOWED")
+
+			// 	s.error(w, r, http.StatusForbidden, errors.New("permission denied"))
+			// 	return
+			// }
 			s.createTopic(w, r, user)
 		default:
 			s.error(w, r, http.StatusMethodNotAllowed, errors.New("method not allowed"))
@@ -260,6 +318,12 @@ func (s *server) createTopic(w http.ResponseWriter, r *http.Request, user *model
 		return
 	}
 
+	// _, err = s.enforcer.AddPolicy(
+	// 	fmt.Sprintf("user:%d", user.Email),
+	// 	"topic",
+	// 	"update",
+	// 	fmt.Sprintf("user:%d", topic.UserID),
+	// )
 	http.Redirect(w, r, "/private/profile", http.StatusSeeOther)
 }
 
@@ -376,6 +440,7 @@ func (s *server) handleUsersCreate() http.HandlerFunc {
 			u.Sanitaze() // ответ без пароля юзера
 			// s.respond(w, r, http.StatusCreated, u) // тут сделать перенапрвление на вход
 
+			fmt.Println(u.Email)
 			if err := addRoleForUser(u.Email, roles.Editor, s.enforcer); err != nil {
 				s.error(w, r, http.StatusInternalServerError, err)
 				return

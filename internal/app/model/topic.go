@@ -12,3 +12,10 @@ type Topic struct {
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
+
+// {
+// 	"user_id": "31",
+// 	"TopicName": "Rename",
+// 	"content": "change content"
+
+// }

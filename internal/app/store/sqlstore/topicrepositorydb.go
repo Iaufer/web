@@ -88,3 +88,37 @@ func (r *TopicRepository) FindAll() ([]*model.Topic, error) {
 
 	return topics, nil
 }
+
+func (r *TopicRepository) UpdateTopic(topic *model.Topic) error {
+	query := `
+		UPDATE topics
+		SET user_id = $1, name = $2, description = $3, content = $4, is_public = $5, updated_at = now()
+		WHERE id = $6
+	`
+
+	result, err := r.store.db.Exec(
+		query,
+		topic.UserID,
+		topic.TopicName,
+		topic.Description,
+		topic.Content,
+		topic.Visibility,
+		topic.ID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return store.ErrRecordNotFound
+	}
+
+	return nil
+}

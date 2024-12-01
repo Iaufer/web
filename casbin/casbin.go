@@ -7,10 +7,10 @@ import (
 )
 
 func NewCasbin() (*casbin.Enforcer, error) {
-	e, err := casbin.NewEnforcer("C:/Users/juobu/Documents/web/casbin/configs/model.conf", "C:/Users/juobu/Documents/web/casbin/configs/policy.csv")
+	e, err := casbin.NewEnforcer("C:/Users/laufe/OneDrive/Рабочий стол/web/casbin/configs/model.conf", "C:/Users/laufe/OneDrive/Рабочий стол/web/casbin/configs/policy.csv")
 
 	if err != nil {
-		fmt.Println("err casbi")
+		fmt.Println("err casbdi")
 		return nil, err
 	}
 
