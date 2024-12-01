@@ -108,7 +108,6 @@ func (s *server) handleTopic() http.HandlerFunc {
 		case http.MethodPost:
 
 			s.updateTopicById(w, r, topicID)
-			// updateTopic
 		default:
 			s.error(w, r, http.StatusMethodNotAllowed, errors.New("method not allowed"))
 		}
@@ -120,7 +119,7 @@ func (s *server) updateTopicById(w http.ResponseWriter, r *http.Request, topicID
 	topic, err := s.store.Topic().FindByID(topicID)
 	// user := r.Context().Value(ctxKeyUser).(*model.User)
 
-	// ok, err := s.enforcer.Enforce(user.Email, "topic", "update", user.ID)
+	// ok, err := s.enforcer.Enforce(user.Email, "topic", "update", topic.UserID)
 
 	// if err != nil {
 	// 	fmt.Println("ТУТ")
@@ -252,21 +251,21 @@ func (s *server) handleProfile() http.HandlerFunc {
 			s.renderProfilePage(w, r, user)
 		case http.MethodPost:
 			// Если разрешение есть, создаем топик
-			// if s.enforcer == nil {
-			// 	fmt.Println("s.enforcer nil")
-			// }
-			// allowed, err := s.enforcer.Enforce(user.Email, "topic", "create")
-			// if err != nil {
-			// 	fmt.Println("ERR ERR")
-			// 	s.error(w, r, http.StatusInternalServerError, err)
-			// 	return
-			// }
-			// if !allowed {
-			// 	fmt.Println("ALLOWED ALLOWED ALLOWED")
+			if s.enforcer == nil {
+				fmt.Println("s.enforcer nil")
+			}
+			allowed, err := s.enforcer.Enforce(user.Email, "topic", "create", "")
+			if err != nil {
+				fmt.Println("ERR ERR")
+				s.error(w, r, http.StatusInternalServerError, err)
+				return
+			}
+			if !allowed {
+				fmt.Println("ALLOWED ALLOWED ALLOWED")
 
-			// 	s.error(w, r, http.StatusForbidden, errors.New("permission denied"))
-			// 	return
-			// }
+				s.error(w, r, http.StatusForbidden, errors.New("permission denied"))
+				return
+			}
 			s.createTopic(w, r, user)
 		default:
 			s.error(w, r, http.StatusMethodNotAllowed, errors.New("method not allowed"))
@@ -318,12 +317,12 @@ func (s *server) createTopic(w http.ResponseWriter, r *http.Request, user *model
 		return
 	}
 
-	// _, err = s.enforcer.AddPolicy(
-	// 	fmt.Sprintf("user:%d", user.Email),
-	// 	"topic",
-	// 	"update",
-	// 	fmt.Sprintf("user:%d", topic.UserID),
-	// )
+	_, err = s.enforcer.AddPolicy(
+		user.Email,
+		"topic",
+		"update",
+		fmt.Sprintf("user:%d", topic.UserID),
+	)
 	http.Redirect(w, r, "/private/profile", http.StatusSeeOther)
 }
 
