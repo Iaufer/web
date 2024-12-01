@@ -1,17 +1,157 @@
-<!-- internal/app/apisrever/templates/topic.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .TopicName }}</title>
+    <title>Topic Details</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #f4f4f4;
+            border-bottom: 1px solid #ddd;
+        }
+        header .left {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        header .left a {
+            text-decoration: none;
+            color: #007bff;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        header .left .user {
+            font-size: 14px;
+            color: #555;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+        }
+        header .left .user a {
+            margin-left: 10px;
+            font-size: 14px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        header .left a:hover {
+            text-decoration: underline;
+        }
+        header .left .user a:hover {
+            text-decoration: underline;
+        }
+        header .right {
+            display: flex;
+            align-items: center;
+            gap: 1px;
+        }
+        header .right a {
+            text-decoration: none;
+            color: #fff;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            margin-left: 10px;
+            transition: 0.3s;
+        }
+    
+        header .right a.logout {
+            background-color: transparent; /* Прозрачный фон */
+            padding: 5px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        header .right a.logout:hover {
+            background-color: #f8f9fa; /* Легкий серый фон при наведении */
+        }
+        main {
+            padding: 20px;
+        }
+        .topic-details {
+            max-width: 800px;
+            margin: 20px auto;
+            text-align: left;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+        }
+        .topic-details h1 {
+            margin: 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .topic-details .field {
+            margin: 15px 0;
+        }
+        .topic-details .field label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .topic-details .field p {
+            margin: 0;
+            font-size: 16px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            text-decoration: none;
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 5px;
+        }
+        .back-link:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
-    <h1>{{ .TopicName }}</h1>
-    <p><strong>Description:</strong> {{ .Description }}</p>
-    <p><strong>Content:</strong> {{ .Content }}</p>
-    <p><strong>Visibility:</strong> {{ if .Visibility }}Visible{{ else }}Hidden{{ end }}</p>
-    <p><strong>Created At:</strong> {{ .CreatedAt }}</p>
-    <p><strong>Updated At:</strong> {{ .UpdatedAt }}</p>
+    <header>
+        <div class="left">
+            <a href="/private/profile">General</a>
+            <div class="user" id="username">
+                <span>User</span>
+                <a href="/own-topics.html">OWN topics</a>
+            </div>
+        </div>
+        <div class="right">
+            <a href="/logout" class="logout">⏻</a>
+        </div>
+    </header>
+    <main>
+        <div class="topic-details">
+            <h1 id="topicName">{{ .TopicName }}</h1>
+            <div class="field">
+                <p><strong>Description:</strong> {{ .Description }}</p>
+            </div>
+            <div class="field">
+                <p><strong>Content:</strong> {{ .Content }}</p>
+            </div>
+            <div class="field">
+                <p><strong>Visibility:</strong> {{ if .Visibility }}Visible{{ else }}Hidden{{ end }}</p>
+            </div>
+            <div class="field">
+                <p><strong>Created At:</strong> {{ .CreatedAt }}</p>
+            </div>
+            <div class="field">
+                <p><strong>Updated At:</strong> {{ .UpdatedAt }}</p>
+            </div>
+            <a href="/private/profile" class="back-link">Back</a>
+        </div>
+    </main>
+    <script src = "/static/showEmail.js"></script>
 </body>
 </html>
+

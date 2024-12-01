@@ -44,7 +44,14 @@ document.getElementById("viewTopicsBtn").addEventListener("click", async () => {
             const description = topic.description || "No Description";
 
             topicElement.innerHTML = `
-                <p><strong>${topicName}</strong> ${description}</p>
+                <p>
+                    <strong>
+                        <a href="/private/topic/${topic.id}" style="text-decoration: none; color: inherit;">
+                            ${topicName}
+                        </a>
+                    </strong>
+                    ${description}
+                </p>
             `;
             topicsContainer.appendChild(topicElement);
         }
