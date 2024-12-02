@@ -62,7 +62,6 @@
             margin-left: 10px;
             transition: 0.3s;
         }
-    
         header .right a.logout {
             background-color: transparent; /* Прозрачный фон */
             padding: 5px;
@@ -99,9 +98,14 @@
             display: block;
             margin-bottom: 5px;
         }
-        .topic-details .field p {
-            margin: 0;
+        .topic-details .field input,
+        .topic-details .field textarea,
+        .topic-details .field select {
+            width: 100%;
+            padding: 8px;
             font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
         .back-link {
             display: inline-block;
@@ -114,6 +118,19 @@
         }
         .back-link:hover {
             background-color: #0056b3;
+        }
+        .save-btn {
+            display: inline-block;
+            margin-top: 20px;
+            text-decoration: none;
+            background-color: #28a745;
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .save-btn:hover {
+            background-color: #218838;
         }
     </style>
 </head>
@@ -132,26 +149,67 @@
     </header>
     <main>
         <div class="topic-details">
-            <h1 id="topicName">{{ .TopicName }}</h1>
+            <h1>Edit Topic</h1>
             <div class="field">
-                <p><strong>Description:</strong> {{ .Description }}</p>
+                <label for="topicName">Topic Name:</label>
+                <input type="text" id="topicName" value="{{ .TopicName }}">
             </div>
             <div class="field">
-                <p><strong>Content:</strong> {{ .Content }}</p>
+                <label for="description">Description:</label>
+                <textarea id="description" rows="4">{{ .Description }}</textarea>
             </div>
             <div class="field">
-                <p><strong>Visibility:</strong> {{ if .Visibility }}Visible{{ else }}Hidden{{ end }}</p>
+                <label for="content">Content:</label>
+                <textarea id="content" rows="6">{{ .Content }}</textarea>
             </div>
             <div class="field">
-                <p><strong>Created At:</strong> {{ .CreatedAt }}</p>
+                <label for="visibility">Visibility:</label>
+                <select id="visibility">
+                    <option value="true" {{ if .Visibility }}selected{{ end }}>Visible</option>
+                    <option value="false" {{ if not .Visibility }}selected{{ end }}>Hidden</option>
+                </select>
             </div>
             <div class="field">
-                <p><strong>Updated At:</strong> {{ .UpdatedAt }}</p>
+                <label for="createdAt">Created At:</label>
+                <input type="text" id="createdAt" value="{{ .CreatedAt }}" disabled>
             </div>
+            <div class="field">
+                <label for="updatedAt">Updated At:</label>
+                <input type="text" id="updatedAt" value="{{ .UpdatedAt }}" disabled>
+            </div>
+            <button class="save-btn" onclick="saveChanges()">Save Changes</button>
             <a href="/private/profile" class="back-link">Back</a>
         </div>
     </main>
-    <script src = "/static/showEmail.js"></script>
+    <script>
+        async function saveChanges() {
+            const topicId = "{{ .ID }}"; // Replace with actual topic ID variable
+            const data = {
+                topicName: document.getElementById('topicName').value,
+                description: document.getElementById('description').value,
+                content: document.getElementById('content').value,
+                visibility: document.getElementById('visibility').value === 'true',
+            };
+
+            try {
+                const response = await fetch(`/private/topic/${topicId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                });
+
+                if (response.ok) {
+                    alert('Changes saved successfully!');
+                } else {
+                    alert('Failed to save changes. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error saving changes:', error);
+                alert('An error occurred while saving changes.');
+            }
+        }
+    </script>
 </body>
 </html>
-
