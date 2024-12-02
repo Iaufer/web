@@ -32,30 +32,27 @@ func NewCasbin() (*casbin.Enforcer, error) {
 // 		log.Fatal(err)
 // 	}
 
-// 	// sub := "bob"
-// 	// obj := "topic"
-// 	// act := "read"
+// 	sub := "Bob"
+// 	role := "reader"
 
-// 	// if res, err := e.Enforce(sub, obj, act); err != nil {
-// 	// 	log.Fatal(err)
-// 	// } else if res {
-// 	// 	fmt.Println("Succes")
-// 	// } else {
-// 	// 	fmt.Println("Unsucces")
-// 	// }
-
-// 	_, err = e.AddRoleForUser("Artyom", "reader")
-
+// 	_, err = e.AddGroupingPolicy(sub, role)
 // 	if err != nil {
-// 		return
+// 		log.Fatal(err)
 // 	}
 
-// 	if res, err := e.Enforce("Artyom", "topic", "create"); err != nil {
+// 	obj := "topic"
+// 	act := "create"
+// 	creator := "Bob"
+
+// 	ok, err := e.Enforce(sub, obj, act)
+// 	if err != nil {
 // 		log.Fatal(err)
-// 	} else if res {
-// 		fmt.Println("Succes")
+// 	}
+
+// 	if ok {
+// 		fmt.Println(sub, " доступ есть", act, obj)
 // 	} else {
-// 		fmt.Println("Unsucces")
+// 		fmt.Println(sub, "доступа нет", act, obj)
 // 	}
 
 // }

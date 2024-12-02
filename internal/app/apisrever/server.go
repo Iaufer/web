@@ -94,6 +94,11 @@ func (s *server) configureRouter() {
 
 func (s *server) handleTopic() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		user, ok := r.Context().Value(ctxKeyUser).(*model.User)
+		if !ok || user == nil {
+			s.error(w, r, http.StatusUnauthorized, errNotAuthenticated)
+			return
+		}
 		vars := mux.Vars(r)
 		topicID, err := strconv.Atoi(vars["id"])
 
@@ -117,21 +122,6 @@ func (s *server) handleTopic() http.HandlerFunc {
 
 func (s *server) updateTopicById(w http.ResponseWriter, r *http.Request, topicID int) {
 	topic, err := s.store.Topic().FindByID(topicID)
-	// user := r.Context().Value(ctxKeyUser).(*model.User)
-
-	// ok, err := s.enforcer.Enforce(user.Email, "topic", "update", topic.UserID)
-
-	// if err != nil {
-	// 	fmt.Println("ТУТ")
-	// 	s.error(w, r, http.StatusInternalServerError, err)
-	// 	return
-	// }
-
-	// if !ok {
-	// 	// Если пользователь не имеет прав на обновление, возвращаем ошибку
-	// 	s.error(w, r, http.StatusForbidden, errors.New("access denied"))
-	// 	return
-	// }
 
 	if err != nil {
 		if errors.Is(err, store.ErrRecordNotFound) {
@@ -139,6 +129,21 @@ func (s *server) updateTopicById(w http.ResponseWriter, r *http.Request, topicID
 			return
 		}
 		s.error(w, r, http.StatusInternalServerError, err)
+		return
+	}
+
+	user, _ := r.Context().Value(ctxKeyUser).(*model.User)
+
+	fmt.Println("user.ID: ", user.ID)
+	fmt.Println("topicID", topicID)
+	allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "edit", strconv.Itoa(topic.UserID))
+
+	if err != nil {
+		s.error(w, r, http.StatusInternalServerError, err)
+		return
+	}
+	if !allowed {
+		s.error(w, r, http.StatusForbidden, errors.New("permission denied on update"))
 		return
 	}
 
@@ -254,7 +259,7 @@ func (s *server) handleProfile() http.HandlerFunc {
 			if s.enforcer == nil {
 				fmt.Println("s.enforcer nil")
 			}
-			allowed, err := s.enforcer.Enforce(user.Email, "topic", "create", "")
+			allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "edit", "")
 			if err != nil {
 				fmt.Println("ERR ERR")
 				s.error(w, r, http.StatusInternalServerError, err)
@@ -263,7 +268,7 @@ func (s *server) handleProfile() http.HandlerFunc {
 			if !allowed {
 				fmt.Println("ALLOWED ALLOWED ALLOWED")
 
-				s.error(w, r, http.StatusForbidden, errors.New("permission denied"))
+				s.error(w, r, http.StatusForbidden, errors.New("permission denied on create"))
 				return
 			}
 			s.createTopic(w, r, user)
@@ -317,12 +322,12 @@ func (s *server) createTopic(w http.ResponseWriter, r *http.Request, user *model
 		return
 	}
 
-	_, err = s.enforcer.AddPolicy(
-		user.Email,
-		"topic",
-		"update",
-		fmt.Sprintf("user:%d", topic.UserID),
-	)
+	// _, err = s.enforcer.AddPolicy(
+	// 	strconv.Itoa(user.ID),
+	// 	"topic",
+	// 	"edit",
+	// 	strconv.Itoa(topic.UserID),
+	// )
 	http.Redirect(w, r, "/private/profile", http.StatusSeeOther)
 }
 
@@ -440,10 +445,10 @@ func (s *server) handleUsersCreate() http.HandlerFunc {
 			// s.respond(w, r, http.StatusCreated, u) // тут сделать перенапрвление на вход
 
 			fmt.Println(u.Email)
-			if err := addRoleForUser(u.Email, roles.Editor, s.enforcer); err != nil {
-				s.error(w, r, http.StatusInternalServerError, err)
-				return
-			}
+			// if err := addRoleForUser(u.Email, roles.Editor, s.enforcer); err != nil {
+			// 	s.error(w, r, http.StatusInternalServerError, err)
+			// 	return
+			// }
 
 			http.Redirect(w, r, "/sessions", http.StatusSeeOther)
 		}
@@ -451,7 +456,7 @@ func (s *server) handleUsersCreate() http.HandlerFunc {
 }
 
 func addRoleForUser(name, role string, e *casbin.Enforcer) error {
-	_, err := e.AddRoleForUser(name, role)
+	_, err := e.AddGroupingPolicy(name, role)
 
 	if err != nil {
 		fmt.Println("Error in addRoleForUser")
@@ -520,6 +525,11 @@ func (s *server) handleSessionsCreate() http.HandlerFunc {
 			// 	log.Fatal(err)
 			// 	return
 			// }
+
+			if err := addRoleForUser(strconv.Itoa(u.ID), roles.Editor, s.enforcer); err != nil {
+				s.error(w, r, http.StatusInternalServerError, err)
+				return
+			}
 
 			http.Redirect(w, r, "/private/profile", http.StatusSeeOther)
 		}
