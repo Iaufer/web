@@ -259,7 +259,7 @@ func (s *server) handleProfile() http.HandlerFunc {
 			if s.enforcer == nil {
 				fmt.Println("s.enforcer nil")
 			}
-			allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "edit", "")
+			allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "create", "*")
 			if err != nil {
 				fmt.Println("ERR ERR")
 				s.error(w, r, http.StatusInternalServerError, err)
