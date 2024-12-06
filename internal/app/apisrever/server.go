@@ -90,6 +90,52 @@ func (s *server) configureRouter() {
 	private.HandleFunc("/roles", s.getRoles).Methods("GET")
 	private.HandleFunc("/alltopics", s.handleFindAll()).Methods("GET")
 	private.HandleFunc("/topic/{id:[0-9]+}", s.handleTopic()).Methods("GET", "POST")
+	private.HandleFunc("/mytopics", s.handleMyTopics()).Methods("GET")
+}
+
+func (s *server) handleMyTopics() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		topic, err := s.store.Topic().FindAll()
+
+		if err != nil {
+			if errors.Is(err, store.ErrRecordNotFound) {
+				s.error(w, r, http.StatusNotFound, errors.New("topic not found"))
+				return
+			}
+			s.error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		user, ok := r.Context().Value(ctxKeyUser).(*model.User)
+
+		if !ok || user == nil {
+			s.error(w, r, http.StatusUnauthorized, errNotAuthenticated)
+			return
+		}
+
+		tmpTopics := make([]model.Topic, 0)
+
+		for _, value := range topic {
+			allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "edit", strconv.Itoa(value.UserID))
+
+			if err != nil {
+				// s.error(w, r, http.StatusInternalServerError, err)
+				continue
+				// return
+			}
+
+			if !allowed {
+				// s.error(w, r, http.StatusForbidden, errors.New("permission denied on get"))
+				continue
+				// return
+			}
+
+			tmpTopics = append(tmpTopics, *value)
+		}
+
+		s.respond(w, r, http.StatusOK, tmpTopics)
+
+	}
 }
 
 func (s *server) handleTopic() http.HandlerFunc {
