@@ -91,6 +91,45 @@ func (s *server) configureRouter() {
 	private.HandleFunc("/alltopics", s.handleFindAll()).Methods("GET")
 	private.HandleFunc("/topic/{id:[0-9]+}", s.handleTopic()).Methods("GET", "POST")
 	private.HandleFunc("/mytopics", s.handleMyTopics()).Methods("GET")
+	private.HandleFunc("/premiumcontent", s.handlePremiumContent()).Methods("GET")
+}
+
+func (s *server) handlePremiumContent() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, ok := r.Context().Value(ctxKeyUser).(*model.User)
+
+		if !ok || user == nil {
+			s.error(w, r, http.StatusUnauthorized, errNotAuthenticated)
+			return
+		}
+
+		s.enforcer.EnableLog(true)
+		premium := ""
+		if user.ID == 116 || user.ID == 118 {
+			premium = "premium"
+		}
+
+		allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "create", "*", premium)
+		fmt.Println(user.ID)
+
+		if err != nil {
+			s.error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		if !allowed {
+			s.error(w, r, http.StatusForbidden, errors.New("permission denied on get premium content"))
+			return
+		}
+
+		// policies, _ := s.enforcer.GetPolicy()
+
+		policies, _ := s.enforcer.GetFilteredPolicy(1, "topic")
+		// roles, _ := s.enforcer.GetFilteredGroupingPolicy(0, strconv.Itoa(user.ID))
+
+		s.respond(w, r, http.StatusOK, policies)
+
+	}
 }
 
 func (s *server) handleMyTopics() http.HandlerFunc {
@@ -116,7 +155,7 @@ func (s *server) handleMyTopics() http.HandlerFunc {
 		tmpTopics := make([]model.Topic, 0)
 
 		for _, value := range topic {
-			allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "edit", strconv.Itoa(value.UserID))
+			allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "edit", strconv.Itoa(value.UserID), "*")
 
 			if err != nil {
 				// s.error(w, r, http.StatusInternalServerError, err)
@@ -182,7 +221,7 @@ func (s *server) updateTopicById(w http.ResponseWriter, r *http.Request, topicID
 
 	fmt.Println("user.ID: ", user.ID)
 	fmt.Println("topicID", topicID)
-	allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "edit", strconv.Itoa(topic.UserID))
+	allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "edit", strconv.Itoa(topic.UserID), "*")
 
 	if err != nil {
 		s.error(w, r, http.StatusInternalServerError, err)
@@ -305,7 +344,7 @@ func (s *server) handleProfile() http.HandlerFunc {
 			if s.enforcer == nil {
 				fmt.Println("s.enforcer nil")
 			}
-			allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "create", "*")
+			allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "create", "*", "*")
 			if err != nil {
 				fmt.Println("ERR ERR")
 				s.error(w, r, http.StatusInternalServerError, err)

@@ -1,9 +1,9 @@
-p, admin, *, *, *
+p, admin, *, *, *, *
 
-p, editor, topic, create, *
+p, editor, topic, create, *, *
 
 
-p, reader, topic, read, *
+p, reader, topic, read, *, *
 
 
 g, Bob, reader
