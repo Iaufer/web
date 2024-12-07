@@ -165,8 +165,8 @@
             <div class="field">
                 <label for="visibility">Visibility:</label>
                 <select id="visibility">
-                    <option value="true" {{ if .Visibility }}selected{{ end }}>Visible</option>
-                    <option value="false" {{ if not .Visibility }}selected{{ end }}>Hidden</option>
+                    <option value="true" {{ if .Visibility }}selected{{ end }}>public</option>
+                    <option value="false" {{ if not .Visibility }}selected{{ end }}>private</option>
                 </select>
             </div>
             <div class="field">

@@ -92,6 +92,7 @@ func (s *server) configureRouter() {
 	private.HandleFunc("/topic/{id:[0-9]+}", s.handleTopic()).Methods("GET", "POST")
 	private.HandleFunc("/mytopics", s.handleMyTopics()).Methods("GET")
 	private.HandleFunc("/premiumcontent", s.handlePremiumContent()).Methods("GET")
+
 }
 
 func (s *server) handlePremiumContent() http.HandlerFunc {
@@ -298,7 +299,34 @@ func (s *server) handleFindAll() http.HandlerFunc {
 			return
 		}
 
-		s.respond(w, r, http.StatusOK, topics)
+		premium := ""
+		if user.ID == 116 || user.ID == 118 {
+			premium = "premium"
+		}
+
+		tmpTopic := make([]model.Topic, 0)
+
+		for _, value := range topics {
+			allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "create", "*", premium)
+
+			if err != nil {
+				// continue
+				// s.error(w, r, http.StatusInternalServerError, err)
+				return
+			}
+
+			if !allowed {
+				fmt.Println("Private topic")
+				if value.Visibility {
+					tmpTopic = append(tmpTopic, *value)
+				}
+				// s.error(w, r, http.StatusForbidden, errors.New("permission denied on get premium content"))
+			} else {
+				tmpTopic = append(tmpTopic, *value)
+			}
+		}
+
+		s.respond(w, r, http.StatusOK, tmpTopic)
 	}
 }
 
