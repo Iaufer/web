@@ -34,6 +34,10 @@ var (
 	errNotAuthenticated         = errors.New("not authenticated")
 )
 
+var (
+	premium = ""
+)
+
 type ctxKey int8
 
 type server struct {
@@ -105,9 +109,16 @@ func (s *server) handlePremiumContent() http.HandlerFunc {
 		}
 
 		s.enforcer.EnableLog(true)
-		premium := ""
+		// premium := ""
 		if user.ID == 116 || user.ID == 118 {
 			premium = "premium"
+			s.enforcer.AddPolicy(
+				strconv.Itoa(user.ID),
+				"topic",
+				"create",
+				"*",
+				premium,
+			)
 		}
 
 		allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "create", "*", premium)
@@ -331,28 +342,26 @@ func (s *server) handleFindAll() http.HandlerFunc {
 }
 
 func (s *server) getRoles(w http.ResponseWriter, r *http.Request) {
-	roles, err := s.enforcer.GetAllRoles()
-
-	if err != nil {
-		log.Fatal(err)
+	user, ok := r.Context().Value(ctxKeyUser).(*model.User)
+	if !ok || user == nil {
+		http.Error(w, "User not found", http.StatusUnauthorized)
 		return
 	}
 
-	users, err := s.enforcer.GetAllSubjects()
-
+	// Получаем роли для текущего пользователя
+	roles, err := s.enforcer.GetRolesForUser(strconv.Itoa(user.ID))
 	if err != nil {
 		log.Fatal(err)
+		http.Error(w, "Error retrieving roles", http.StatusInternalServerError)
 		return
 	}
-	data := map[string]interface{}{
-		"roles": roles,
-		"users": users,
-	}
 
-	println(data)
+	// data := map[string]interface{}{
+	// 	"user":  user.Email,
+	// 	"roles": roles,
+	// }
 
-	// s.respond(w, r, http.StatusOK, data) // здесь как то сделать так чтобы были все роли и юзеры их
-
+	// Возвращаем ответ с ролями для текущего пользователя
 	s.respond(w, r, http.StatusOK, roles)
 }
 
@@ -576,11 +585,15 @@ func addRoleForUser(name, role string, e *casbin.Enforcer) error {
 
 		return err
 	}
+	e.SavePolicy()
+	roles, _ := e.GetRolesForUser(name)
+	fmt.Println("Current roles for", name, ":", roles)
 
 	return nil
 }
 
 func (s *server) handleSessionsCreate() http.HandlerFunc {
+	premium = ""
 	type request struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -639,9 +652,27 @@ func (s *server) handleSessionsCreate() http.HandlerFunc {
 			// 	return
 			// }
 
-			if err := addRoleForUser(strconv.Itoa(u.ID), roles.Editor, s.enforcer); err != nil {
-				s.error(w, r, http.StatusInternalServerError, err)
-				return
+			fmt.Println("u.Email", u.Email)
+
+			if u.Email != "admin@mail.ru" {
+				if err := addRoleForUser(strconv.Itoa(u.ID), roles.Editor, s.enforcer); err != nil {
+					s.error(w, r, http.StatusInternalServerError, err)
+					return
+				}
+
+			} else {
+				if err := addRoleForUser(strconv.Itoa(u.ID), roles.Admin, s.enforcer); err != nil {
+					s.error(w, r, http.StatusInternalServerError, err)
+					return
+				}
+				premium = "*"
+				s.enforcer.AddPolicy(
+					strconv.Itoa(u.ID),
+					"topic",
+					"create",
+					"*",
+					"*",
+				)
 			}
 
 			http.Redirect(w, r, "/private/profile", http.StatusSeeOther)

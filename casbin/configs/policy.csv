@@ -1,9 +1,8 @@
 p, admin, *, *, *, *
-
-p, editor, topic, create, *, *
-
-
+p, editor, topic, create, *, is_premium
 p, reader, topic, read, *, *
-
-
-g, Bob, reader
+p, 116, topic, create, *, premium
+p, 119, topic, create, *, *
+g, 119, admin
+g, 98, editor
+g, 116, editor
