@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"database/sql"
+	"fmt"
 	"web/internal/app/model"
 	"web/internal/app/store"
 )
@@ -121,4 +122,24 @@ func (r *TopicRepository) UpdateTopic(topic *model.Topic) error {
 	}
 
 	return nil
+}
+
+func (r *TopicRepository) DeleteTopic(id int) error {
+	query := `DELETE FROM topics  WHERE id = $1`
+
+	result, err := r.store.db.Exec(query, id)
+
+	if err != nil {
+		fmt.Printf("Error deleting topic with ID %d: %v\n", id, err)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+
+	if rowsAffected == 0 {
+		return store.ErrRecordNotFound
+	}
+
+	return nil
+
 }

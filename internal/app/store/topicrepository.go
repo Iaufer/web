@@ -7,4 +7,5 @@ type TopicRepository interface {
 	FindByID(id int) (*model.Topic, error)
 	FindAll() ([]*model.Topic, error)
 	UpdateTopic(*model.Topic) error
+	DeleteTopic(int) error
 }

@@ -93,7 +93,7 @@ func (s *server) configureRouter() {
 
 	private.HandleFunc("/roles", s.getRoles).Methods("GET")
 	private.HandleFunc("/alltopics", s.handleFindAll()).Methods("GET")
-	private.HandleFunc("/topic/{id:[0-9]+}", s.handleTopic()).Methods("GET", "POST")
+	private.HandleFunc("/topic/{id:[0-9]+}", s.handleTopic()).Methods("GET", "POST", "DELETE")
 	private.HandleFunc("/mytopics", s.handleMyTopics()).Methods("GET")
 	private.HandleFunc("/premiumcontent", s.handlePremiumContent()).Methods("GET")
 
@@ -206,11 +206,24 @@ func (s *server) handleTopic() http.HandlerFunc {
 		case http.MethodPost:
 
 			s.updateTopicById(w, r, topicID)
+
+		case http.MethodDelete:
+			s.deleteTopic(w, r, topicID)
 		default:
 			s.error(w, r, http.StatusMethodNotAllowed, errors.New("method not allowed"))
 		}
 
 	}
+}
+
+func (s *server) deleteTopic(w http.ResponseWriter, r *http.Request, topicID int) {
+	user, ok := r.Context().Value(ctxKeyUser).(*model.User)
+
+	if !ok || user == nil {
+		s.error(w, r, http.StatusUnauthorized, errNotAuthenticated)
+		return
+	}
+
 }
 
 func (s *server) updateTopicById(w http.ResponseWriter, r *http.Request, topicID int) {
@@ -306,7 +319,7 @@ func (s *server) handleFindAll() http.HandlerFunc {
 			return
 		}
 
-		premium := ""
+		// premium := ""
 		if user.ID == 116 || user.ID == 118 {
 			premium = "premium"
 		}
@@ -593,14 +606,14 @@ func addRoleForUser(name, role string, e *casbin.Enforcer) error {
 }
 
 func (s *server) handleSessionsCreate() http.HandlerFunc {
-	premium = ""
 	type request struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		premium = ""
+		fmt.Println("Premium", premium)
 		if r.Method == http.MethodGet {
 			http.ServeFile(w, r, "internal/app/apisrever/templates/login.html") // сделать так
 
@@ -661,6 +674,7 @@ func (s *server) handleSessionsCreate() http.HandlerFunc {
 				}
 
 			} else {
+
 				if err := addRoleForUser(strconv.Itoa(u.ID), roles.Admin, s.enforcer); err != nil {
 					s.error(w, r, http.StatusInternalServerError, err)
 					return
@@ -674,6 +688,8 @@ func (s *server) handleSessionsCreate() http.HandlerFunc {
 					"*",
 				)
 			}
+
+			fmt.Println("Premium", premium)
 
 			http.Redirect(w, r, "/private/profile", http.StatusSeeOther)
 		}
