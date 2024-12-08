@@ -219,12 +219,24 @@ func (s *server) handleTopic() http.HandlerFunc {
 func (s *server) deleteTopic(w http.ResponseWriter, r *http.Request, topicID int) {
 	user, ok := r.Context().Value(ctxKeyUser).(*model.User)
 
+	topic, err := s.store.Topic().FindByID(topicID)
+
+	if err != nil {
+		if errors.Is(err, store.ErrRecordNotFound) {
+			s.error(w, r, http.StatusNotFound, errors.New("topic not found"))
+			return
+		}
+		s.error(w, r, http.StatusInternalServerError, err)
+		return
+	}
+
 	if !ok || user == nil {
 		s.error(w, r, http.StatusUnauthorized, errNotAuthenticated)
 		return
 	}
+	s.enforcer.EnableLog(true)
 
-	allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "delete", strconv.Itoa(topicID), "")
+	allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "delete", strconv.Itoa(topic.UserID), "*")
 
 	if err != nil {
 		s.error(w, r, http.StatusInternalServerError, err)
