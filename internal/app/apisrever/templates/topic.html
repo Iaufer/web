@@ -132,6 +132,21 @@
         .save-btn:hover {
             background-color: #218838;
         }
+
+        .delete-btn {
+            display: inline-block;
+            margin-top: 20px;
+            text-decoration: none;
+            background-color: #dc3545;
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            border: none;
+        }
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
     </style>
 </head>
 <body>
@@ -178,38 +193,11 @@
                 <input type="text" id="updatedAt" value="{{ .UpdatedAt }}" disabled>
             </div>
             <button class="save-btn" onclick="saveChanges()">Save Changes</button>
+            <button class="delete-btn" onclick="deleteTopic()">Delete</button>
             <a href="/private/profile" class="back-link">Back</a>
         </div>
     </main>
-    <script>
-        async function saveChanges() {
-            const topicId = "{{ .ID }}"; // Replace with actual topic ID variable
-            const data = {
-                topicName: document.getElementById('topicName').value,
-                description: document.getElementById('description').value,
-                content: document.getElementById('content').value,
-                visibility: document.getElementById('visibility').value === 'true',
-            };
-
-            try {
-                const response = await fetch(`/private/topic/${topicId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data),
-                });
-
-                if (response.ok) {
-                    alert('Changes saved successfully!');
-                } else {
-                    alert('Failed to save changes. Please try again.');
-                }
-            } catch (error) {
-                console.error('Error saving changes:', error);
-                alert('An error occurred while saving changes.');
-            }
-        }
-    </script>
+    <script src="/static/updateTopic.js"></script>
+    <script src="/static/deleteTopic.js"></script>
 </body>
 </html>
