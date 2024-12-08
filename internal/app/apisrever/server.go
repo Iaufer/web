@@ -224,6 +224,26 @@ func (s *server) deleteTopic(w http.ResponseWriter, r *http.Request, topicID int
 		return
 	}
 
+	allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "delete", strconv.Itoa(topicID), "")
+
+	if err != nil {
+		s.error(w, r, http.StatusInternalServerError, err)
+		return
+	}
+	if !allowed {
+		s.error(w, r, http.StatusForbidden, errors.New("permission denied on delete"))
+		return
+	}
+
+	err = s.store.Topic().DeleteTopic(topicID)
+
+	if err != nil {
+		s.error(w, r, http.StatusInternalServerError, err)
+		return
+	}
+
+	http.Redirect(w, r, "/private/profile", http.StatusSeeOther)
+
 }
 
 func (s *server) updateTopicById(w http.ResponseWriter, r *http.Request, topicID int) {
