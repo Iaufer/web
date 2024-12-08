@@ -133,14 +133,10 @@ func (s *server) handlePremiumContent() http.HandlerFunc {
 			s.error(w, r, http.StatusForbidden, errors.New("permission denied on get premium content"))
 			return
 		}
-
 		// policies, _ := s.enforcer.GetPolicy()
-
 		policies, _ := s.enforcer.GetFilteredPolicy(1, "topic")
 		// roles, _ := s.enforcer.GetFilteredGroupingPolicy(0, strconv.Itoa(user.ID))
-
 		s.respond(w, r, http.StatusOK, policies)
-
 	}
 }
 
@@ -328,8 +324,12 @@ func (s *server) handleFindAll() http.HandlerFunc {
 
 			if !allowed {
 				fmt.Println("Private topic")
-				if value.Visibility {
+				if !value.Visibility {
 					tmpTopic = append(tmpTopic, *value)
+				}
+				if value.Visibility && user.ID == value.UserID {
+					tmpTopic = append(tmpTopic, *value)
+
 				}
 				// s.error(w, r, http.StatusForbidden, errors.New("permission denied on get premium content"))
 			} else {
