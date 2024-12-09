@@ -24,6 +24,7 @@ func Start(config *Config) error {
 	srv := newServer(store, sessionStore, enforcer)
 
 	return http.ListenAndServe(config.BindAddr, srv)
+	// m = g(r.sub, p.sub) && (r.obj == p.obj || p.obj == "*") && (r.act == p.act || p.act == "*") && (r.is_premium == p.is_premium || r.is_premium == "*") && timeFunc(r.updated_at) || r.updated_at == "*" || (r.sub == r.creator && r.act == "edit") || (r.sub == r.creator && r.act == "delete") || (g(r.sub, "admin") && r.act == "delete")
 }
 
 func newDB(databaseURL string) (*sql.DB, error) {
