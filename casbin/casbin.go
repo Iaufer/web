@@ -22,39 +22,39 @@ func NewCasbin() (*casbin.Enforcer, error) {
 
 	}
 
-	e.AddFunction("timeFunc", func(args ...interface{}) (interface{}, error) {
-		fmt.Println("AddFunsadction")
+	// e.AddFunction("timeFunc", func(args ...interface{}) (interface{}, error) {
+	// 	fmt.Println("AddFunsadction")
 
-		u := args[0].(string)
+	// 	u := args[0].(string)
 
-		fmt.Println("UUUU: ", u)
+	// 	fmt.Println("UUUU: ", u)
 
-		if u == "1" {
-			return true, nil
-		} else {
-			return false, nil
-		}
-		// fmt.Println("AddFunction", u)
+	// 	if u == "1" {
+	// 		return true, nil
+	// 	} else {
+	// 		return false, nil
+	// 	}
+	// 	// fmt.Println("AddFunction", u)
 
-		// loc, err := time.LoadLocation("Local")
+	// 	// loc, err := time.LoadLocation("Local")
 
-		// if err != nil {
-		// 	fmt.Println("Locat: ", err)
-		// }
+	// 	// if err != nil {
+	// 	// 	fmt.Println("Locat: ", err)
+	// 	// }
 
-		// lastUpdated, err := time.ParseInLocation(l, u, loc)
+	// 	// lastUpdated, err := time.ParseInLocation(l, u, loc)
 
-		// fmt.Println("AddFunction", lastUpdated)
+	// 	// fmt.Println("AddFunction", lastUpdated)
 
-		// if err != nil {
-		// 	fmt.Println("ADd err: ", err)
-		// }
-		// fmt.Println("ДАШЕЛ")
-		// fmt.Println("lastUpdated) >= 2*time.Minute: ", time.Since(lastUpdated) >= 2*time.Minute)
-		// fmt.Println("time.Since(lastUpdated): ", time.Since(lastUpdated))
-		// fmt.Println("2*time.Minute: ", 2*time.Minute)
-		// return time.Since(lastUpdated) >= 2*time.Minute, nil
-	})
+	// 	// if err != nil {
+	// 	// 	fmt.Println("ADd err: ", err)
+	// 	// }
+	// 	// fmt.Println("ДАШЕЛ")
+	// 	// fmt.Println("lastUpdated) >= 2*time.Minute: ", time.Since(lastUpdated) >= 2*time.Minute)
+	// 	// fmt.Println("time.Since(lastUpdated): ", time.Since(lastUpdated))
+	// 	// fmt.Println("2*time.Minute: ", 2*time.Minute)
+	// 	// return time.Since(lastUpdated) >= 2*time.Minute, nil
+	// })
 
 	return e, nil
 

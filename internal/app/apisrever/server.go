@@ -120,10 +120,11 @@ func (s *server) handlePremiumContent() http.HandlerFunc {
 				"create",
 				"*",
 				premium,
+				"*",
 			)
 		}
 
-		allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "create", "*", premium, "*")
+		allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "create", "*", premium, 0)
 		fmt.Println(user.ID)
 
 		if err != nil {
@@ -180,7 +181,7 @@ func (s *server) handleMyTopics() http.HandlerFunc {
 		tmpTopics := make([]model.Topic, 0)
 
 		for _, value := range topic {
-			allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "edit", strconv.Itoa(value.UserID), "*", "**")
+			allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "edit", strconv.Itoa(value.UserID), "*", 0)
 
 			if err != nil {
 				// s.error(w, r, http.StatusInternalServerError, err)
@@ -253,7 +254,7 @@ func (s *server) deleteTopic(w http.ResponseWriter, r *http.Request, topicID int
 	}
 	s.enforcer.EnableLog(true)
 
-	allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "delete", strconv.Itoa(topic.UserID), "*", "*")
+	allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "delete", strconv.Itoa(topic.UserID), "*", 0)
 
 	if err != nil {
 		s.error(w, r, http.StatusInternalServerError, err)
@@ -292,24 +293,17 @@ func (s *server) updateTopicById(w http.ResponseWriter, r *http.Request, topicID
 	fmt.Println("user.ID: ", user.ID)
 	fmt.Println("topicID", topicID)
 	s.enforcer.EnableLog(true)
-	l := "2006-01-02 15:04:05.999999"
-	loc, err := time.LoadLocation("Local")
-	if err != nil {
-		fmt.Println("Locat: ", err)
-	}
-	lastUpdated, err := time.ParseInLocation(l, topic.UpdatedAt.GoString(), loc)
-	b := time.Since(lastUpdated) >= 2*time.Minute
-	_b := ""
-	if b {
-		_b = "1"
-	} else {
-		_b = "0"
-	}
 
-	fmt.Println("BBBB: ", b)
+	layout := "2006-01-02 15:04:05.000000"
+	location := time.FixedZone("UTC+7", 7*60*60)
+	u := topic.UpdatedAt.Format(layout)
+	specificTime, err := time.ParseInLocation(layout, u, location)
+	now := time.Now()
+	localTime := now.In(location)
+	diff := localTime.Sub(specificTime)
 
-	fmt.Println(strconv.Itoa(user.ID), "topic", "edit", strconv.Itoa(topic.UserID), "*", topic.UpdatedAt)
-	allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "edit", strconv.Itoa(topic.UserID), "*", _b)
+	fmt.Println("DIFF: ", int(diff.Seconds()))
+	allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "editWithTime", strconv.Itoa(topic.UserID), "*", int(diff.Seconds()))
 	s.enforcer.EnableLog(true)
 
 	if err != nil {
@@ -386,7 +380,7 @@ func (s *server) handleUnAllTopics() http.HandlerFunc {
 		for _, value := range topic {
 			s.enforcer.EnableLog(true)
 
-			allowed, err := s.enforcer.Enforce("r", "topic", "read", "*", "*", "*")
+			allowed, err := s.enforcer.Enforce("r", "topic", "read", "*", "*", 0)
 			if err != nil {
 				fmt.Printf("Error in Enforce: %v\n", err)
 				return
@@ -443,7 +437,7 @@ func (s *server) handleFindAll() http.HandlerFunc {
 		tmpTopic := make([]model.Topic, 0)
 
 		for _, value := range topics {
-			allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "create", "*", premium, "*")
+			allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "create", "*", premium, 0)
 
 			if err != nil {
 				// continue
@@ -510,7 +504,7 @@ func (s *server) handleProfile() http.HandlerFunc {
 			if s.enforcer == nil {
 				fmt.Println("s.enforcer nil")
 			}
-			allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "create", "*", "*", "*")
+			allowed, err := s.enforcer.Enforce(strconv.Itoa(user.ID), "topic", "create", "*", "*", 0)
 			if err != nil {
 				fmt.Println("ERR ERR")
 				s.error(w, r, http.StatusInternalServerError, err)
@@ -792,18 +786,24 @@ func (s *server) handleSessionsCreate() http.HandlerFunc {
 			} else {
 
 				if err := addRoleForUser(strconv.Itoa(u.ID), roles.Admin, s.enforcer); err != nil {
+					fmt.Println("ADMIN: ", err)
 					s.error(w, r, http.StatusInternalServerError, err)
 					return
 				}
 				premium = "*"
-				s.enforcer.AddPolicy(
+				_, err := s.enforcer.AddPolicy(
 					strconv.Itoa(u.ID),
 					"topic",
 					"create",
 					"*",
 					"*",
-					"*",
+					"0",
 				)
+
+				if err != nil {
+					fmt.Println("ADMIN pol: ", err)
+
+				}
 			}
 
 			fmt.Println("Premium", premium)

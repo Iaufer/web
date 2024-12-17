@@ -4,8 +4,10 @@ p, reader, topic, read, *, *, *
 p, 116, topic, create, *, premium, *
 p, 119, topic, create, *, *, *
 p, 118, topic, create, *, premium, *
+p, 119, topic, create, *, *, 0
 g, 119, admin
 g, 98, editor
 g, 116, editor
 g, 118, editor
 g, 120, editor
+g, r, reader
